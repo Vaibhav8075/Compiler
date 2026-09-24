@@ -64,10 +64,19 @@ cmake --build .
 ./jscpp dump pointers.jbc
 ```
 
-## Limitations & Disclaimer
+## Supported Language Subset & Limitations
 
-But don’t claim “C++ is now WORA”
+This compiler is designed as a proof-of-concept for memory-safe execution. It strictly supports a **minimal subset of C++** (basic primitives, pointers, arrays, loops, and functions). 
 
-Your project only supports a minimal subset of C++. It explicitly excludes things like templates, classes/structs, STL, preprocessor macros, and multiple inheritance.
+**Explicit Exclusions:**
+This project explicitly excludes advanced C++ features. The compiler will deliberately reject the following with specific error messages:
+- Templates
+- Classes and Structs
+- The Standard Template Library (STL)
+- Preprocessor macros (e.g., `#include`, `#define`)
+- Multiple inheritance and object-oriented features
+
+By restricting the language subset, we guarantee absolute memory safety (null checking, bounds checking, ARC) without the overhead of tracking complex C++ memory semantics.
+
 - **Cyclic References**: The reference counting implementation does not inherently solve cyclic ownership.
 - **Performance**: The VM interprets custom bytecode and prioritizes safety over execution speed.

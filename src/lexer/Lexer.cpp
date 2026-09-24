@@ -136,6 +136,8 @@ Token Lexer::nextToken() {
         case ']': return Token(TokenType::RBRACKET, "]", loc);
         case ';': return Token(TokenType::SEMICOLON, ";", loc);
         case ',': return Token(TokenType::COMMA, ",", loc);
+        case '#':
+            throw LexerError("Error: Preprocessor macros (like #include or #define) and STL are explicitly excluded in this minimal C++ subset.", loc);
         default:
             throw LexerError(std::string("Unexpected character '") + c + "'", loc);
     }
@@ -152,6 +154,13 @@ Token Lexer::identifierOrKeyword() {
     if (it != keywords.end()) {
         return Token(it->second, lexeme, loc);
     }
+    
+    // Explicitly reject unsupported C++ features as requested by feedback
+    if (lexeme == "template" || lexeme == "class" || lexeme == "struct" || 
+        lexeme == "public" || lexeme == "private" || lexeme == "virtual") {
+        throw LexerError("Error: This project only supports a minimal subset of C++. Features like templates, classes, and structs are explicitly excluded.", loc);
+    }
+    
     return Token(TokenType::IDENTIFIER, lexeme, loc);
 }
 
