@@ -1,0 +1,11 @@
+void foo() {
+    int* p = new int;
+    *p = 100;
+    print(*p);
+    // p goes out of scope here, so it should be reclaimed!
+}
+
+void main() {
+    foo();
+    print(1); // just to show we survived
+}

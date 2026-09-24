@@ -1,0 +1,182 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\geometry{top=1in, bottom=1in, left=1in, right=1in}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{\textbf{Java-Safe C++ (jscpp)}\\ \large A C++-Subset Compiler with a Bytecode VM for Portable, Memory-Safe Execution}
+\author{Engineering Team}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+C++ is a powerful systems programming language but notoriously lacks memory safety, often leading to undefined behavior, buffer overflows, and null pointer dereferences. This project, \textbf{Java-Safe C++ (jscpp)}, is an end-to-end compiler and stack-based virtual machine built entirely from scratch. It compiles a restricted subset of C++ into a custom portable bytecode format and executes it within a managed Virtual Machine. The compiler automatically injects safety checks (such as null pointer and array bounds checking) and manages memory through Automatic Reference Counting (ARC), effectively bringing Java-like safety guarantees to C++ syntax.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+The primary objective of this project is to demonstrate modern compiler construction principles combined with managed runtime execution. Instead of relying on existing frameworks like LLVM or interpreters like Python, we implemented a full multi-stage compiler pipeline in standard C++17. 
+
+\subsection{Design Goals}
+\begin{itemize}
+    \item \textbf{Memory Safety:} Unsupported or dangerous operations result in graceful runtime exceptions rather than host OS segmentation faults.
+    \item \textbf{No Undefined Behavior:} Static typing and runtime safety eliminate undefined behavior for the supported subset.
+    \item \textbf{Zero External Dependencies:} The project uses only the standard C++ library (no Lex/Yacc, no LLVM).
+    \item \textbf{Understandable Architecture:} Clean separation of Lexical Analysis, Parsing, Semantic Analysis, Code Generation, and VM execution.
+\end{itemize}
+
+\section{Language Specification}
+The compiler supports a minimal but Turing-complete subset of C++:
+
+\subsection{Supported Features}
+\begin{itemize}
+    \item \textbf{Types:} \texttt{int}, \texttt{bool}, \texttt{void}, Pointers (\texttt{T*}), and 1D Arrays (\texttt{T[N]}).
+    \item \textbf{Control Flow:} \texttt{if / else}, \texttt{while}, \texttt{for}, \texttt{return}.
+    \item \textbf{Expressions:} Standard arithmetic (\texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}, \texttt{\%}), relational (\texttt{==}, \texttt{<}, \texttt{>=}, etc.), and logical (\texttt{\&\&}, \texttt{||}, \texttt{!}) operations.
+    \item \textbf{Memory:} Dynamic allocation via \texttt{new T}, pointer dereferencing (\texttt{*p}), array indexing (\texttt{arr[i]}).
+    \item \textbf{Functions:} User-defined functions with parameters, plus a built-in \texttt{print()} function.
+\end{itemize}
+
+\subsection{Unsupported Features}
+To keep the project focused on safety mechanisms, we explicitly reject features like templates, classes/structs, standard library (STL) headers, preprocessor macros, and multiple inheritance.
+
+\section{Compiler Pipeline Architecture}
+The compiler is divided into five distinct stages:
+
+\subsection{1. Lexer}
+Converts the raw source code string into a sequence of \texttt{Token} objects. It handles whitespace/comment stripping and precise line/column source-location tracking for detailed error diagnostics.
+
+\subsection{2. Parser}
+A handcrafted recursive-descent parser that consumes tokens and builds a custom Abstract Syntax Tree (AST). It properly enforces operator precedence (e.g., \texttt{a + b * c} parses as \texttt{a + (b * c)}).
+
+\subsection{3. Semantic Analyzer}
+Implemented as an AST Visitor, this phase maintains lexical scopes and symbol tables. It performs rigorous static type-checking (e.g., ensuring a \texttt{bool} is not assigned to an \texttt{int*}). Any violations result in an immediate compile-time \texttt{SemanticError}.
+
+\subsection{4. Code Generator}
+Lowers the AST into our custom bytecode. Crucially, this is where memory safety is enforced. The generator automatically injects instructions like \texttt{CHECK\_NULL}, \texttt{CHECK\_BOUNDS}, \texttt{INC\_REF}, and \texttt{DEC\_REF} around memory access and pointer assignments.
+
+\subsection{5. Virtual Machine}
+A deterministically evaluated, stack-based runtime engine. The VM maintains an operand stack, a call stack for function frames, local variables, and a managed heap.
+
+\section{Memory Safety Mechanisms}
+The core achievement of \textbf{jscpp} is genuine safety injection. The compiler protects the program using three primary runtime guards:
+
+\subsection{Null Pointer Checks}
+Before any pointer dereference (\texttt{*p}), the compiler emits a \texttt{CHECK\_NULL} opcode. If the pointer evaluates to address \texttt{0}, the VM halts and throws a \texttt{NullPointerException}.
+
+\subsection{Array Bounds Checks}
+When accessing arrays (\texttt{arr[i]}), the compiler pushes the array pointer and the index, then emits \texttt{CHECK\_BOUNDS}. The VM's managed heap stores the allocated size of every object. If $i < 0$ or $i \ge \text{size}$, an \texttt{ArrayIndexOutOfBoundsException} is thrown.
+
+\subsection{Automatic Reference Counting (ARC)}
+All \texttt{new} allocations are tracked on the VM's Managed Heap. The code generator emits \texttt{INC\_REF} whenever a pointer is stored in a variable. At the end of every lexical block (\texttt{\{\}}), the compiler automatically injects \texttt{DEC\_REF} for all local pointers going out of scope. When a reference count reaches zero, the memory is reclaimed.
+
+\section{Bytecode Format}
+The compiled bytecode can be executed in memory or serialized to a binary \texttt{.jbc} file. The instruction set includes operations such as:
+\begin{itemize}
+    \item \texttt{PUSH\_CONST}, \texttt{LOAD\_LOCAL}, \texttt{STORE\_LOCAL}
+    \item Arithmetic \& Logical operators (\texttt{ADD}, \texttt{MUL}, \texttt{AND}, \texttt{EQ}, etc.)
+    \item Control Flow (\texttt{JUMP}, \texttt{JUMP\_IF\_FALSE}, \texttt{CALL}, \texttt{RETURN})
+    \item Memory \& Safety (\texttt{ALLOC}, \texttt{CHECK\_BOUNDS}, \texttt{CHECK\_NULL}, \texttt{INC\_REF}, \texttt{DEC\_REF}, \texttt{LOAD\_ARRAY}, \texttt{STORE\_ARRAY\_INV})
+\end{itemize}
+
+\section{Build and Execution Instructions}
+
+\subsection{Building the Compiler}
+The project uses CMake and requires a C++17 compatible compiler.
+\begin{lstlisting}[language=bash]
+cd java-safe-cpp
+mkdir build
+cd build
+cmake ..
+cmake --build .
+\end{lstlisting}
+
+\subsection{Command Line Interface (CLI)}
+The compiled \texttt{jscpp} executable provides several commands:
+\begin{lstlisting}[language=bash]
+# Run a program directly from source
+./jscpp run examples/arrays.cppsafe
+
+# View VM execution trace step-by-step
+./jscpp run examples/pointers.cppsafe --trace
+
+# Compile to binary bytecode
+./jscpp compile examples/hello.cppsafe -o hello.jbc
+
+# Dump human-readable bytecode metadata
+./jscpp dump hello.jbc
+\end{lstlisting}
+
+\section{Examples and Expected Output}
+
+\subsection{Array Bounds Safety}
+\textbf{Source Code:}
+\begin{lstlisting}[language=C++]
+void main() {
+    int arr[3];
+    arr[0] = 10;
+    print(arr[0]);
+    arr[5] = 100; // Trigger bounds check
+}
+\end{lstlisting}
+\textbf{Output:}
+\begin{lstlisting}
+10
+Runtime Error:
+ArrayIndexOutOfBoundsException: index 5, length 3
+\end{lstlisting}
+
+\subsection{Null Pointer Safety}
+\textbf{Source Code:}
+\begin{lstlisting}[language=C++]
+void main() {
+    int* p = nullptr;
+    print(*p); // Trigger null check
+}
+\end{lstlisting}
+\textbf{Output:}
+\begin{lstlisting}
+Runtime Error:
+NullPointerException: attempted to dereference a null pointer
+\end{lstlisting}
+
+\section{Conclusion}
+This project successfully demonstrates the integration of modern memory safety features into a legacy systems syntax. By tightly coupling a custom compiler pipeline with a strict managed runtime, we achieve a memory-safe C++ subset that is portable and deterministic, completely preventing undefined behavior.
+
+\end{document}

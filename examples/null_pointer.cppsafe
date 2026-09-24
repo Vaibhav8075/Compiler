@@ -1,0 +1,6 @@
+void main() {
+    int* p = nullptr;
+    
+    // Trigger null check
+    print(*p);
+}

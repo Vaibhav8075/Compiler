@@ -1,0 +1,9 @@
+void main() {
+    int* p = new int;
+    *p = 42;
+    print(*p);
+    
+    int* q = p;
+    *q = *q + 10;
+    print(*p);
+}

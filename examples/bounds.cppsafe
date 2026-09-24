@@ -1,0 +1,8 @@
+void main() {
+    int arr[3];
+    arr[0] = 10;
+    print(arr[0]);
+    
+    // Trigger bounds check
+    arr[5] = 100;
+}
