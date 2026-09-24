@@ -64,8 +64,9 @@ cmake --build .
 ./jscpp dump pointers.jbc
 ```
 
-## Limitations & Future Work
+## Limitations & Disclaimer
 
-- **Subset Only**: This is not a full C++ compiler. Features like STL, templates, classes, operator overloading, etc., are explicitly not supported.
+- **Not a "WORA" C++ Replacement**: This project explicitly does **not** claim to make C++ "Write Once, Run Anywhere". The portability applies *only* to the specific, limited subset of syntax supported by our custom VM.
+- **Strict Subset Only**: This is not a full C++ compiler. Features such as templates, classes/structs, standard library (STL) headers, preprocessor macros, operator overloading, and multiple inheritance are explicitly excluded.
 - **Cyclic References**: The reference counting implementation does not inherently solve cyclic ownership.
 - **Performance**: The VM interprets custom bytecode and prioritizes safety over execution speed.

@@ -176,7 +176,9 @@ Runtime Error:
 NullPointerException: attempted to dereference a null pointer
 \end{lstlisting}
 
-\section{Conclusion}
-This project successfully demonstrates the integration of modern memory safety features into a legacy systems syntax. By tightly coupling a custom compiler pipeline with a strict managed runtime, we achieve a memory-safe C++ subset that is portable and deterministic, completely preventing undefined behavior.
+\section{Conclusion and Limitations}
+This project successfully demonstrates the integration of modern memory safety features into a legacy systems syntax. By tightly coupling a custom compiler pipeline with a strict managed runtime, we achieve a memory-safe environment that prevents undefined behavior for our specific language subset.
+
+\textbf{Disclaimer on Portability and Scope:} It is important to emphasize that this project does \emph{not} claim to make C++ "Write Once, Run Anywhere" (WORA). The portability and safety guarantees apply strictly to the minimal academic subset of C++ implemented by our custom VM. Real-world C++ constructs such as templates, classes/structs, STL, preprocessor macros, and multiple inheritance are explicitly excluded from this compiler.
 
 \end{document}
