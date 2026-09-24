@@ -66,7 +66,8 @@ cmake --build .
 
 ## Limitations & Disclaimer
 
-- **Not a "WORA" C++ Replacement**: This project explicitly does **not** claim to make C++ "Write Once, Run Anywhere". The portability applies *only* to the specific, limited subset of syntax supported by our custom VM.
-- **Strict Subset Only**: This is not a full C++ compiler. Features such as templates, classes/structs, standard library (STL) headers, preprocessor macros, operator overloading, and multiple inheritance are explicitly excluded.
+But don’t claim “C++ is now WORA”
+
+Your project only supports a minimal subset of C++. It explicitly excludes things like templates, classes/structs, STL, preprocessor macros, and multiple inheritance.
 - **Cyclic References**: The reference counting implementation does not inherently solve cyclic ownership.
 - **Performance**: The VM interprets custom bytecode and prioritizes safety over execution speed.
